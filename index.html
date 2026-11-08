@@ -11,6 +11,7 @@
   #standby { position: fixed; left: 6vw; top: 8vh; color: #555; transition: transform 2s; }
   #clock { font-size: 7vw; font-weight: 300; letter-spacing: .05em; }
   #sline { font-size: 1.6vw; margin-top: .5vw; }
+  #hist { font-size: 1.25vw; margin-top: 1.2vw; line-height: 1.55; color: #5a5a5a; white-space: pre; }
   .dot { display: inline-block; width: 1vw; height: 1vw; border-radius: 50%; background: #555; margin-right: .6vw; vertical-align: middle; }
   .dot.ok { background: #2e7d32; } .dot.down { background: #b71c1c; }
   /* ---------- alert ---------- */
@@ -50,6 +51,7 @@
 <div id="standby">
   <div id="clock">--:--</div>
   <div id="sline"><span id="dot" class="dot"></span><span id="stext">接続中…</span></div>
+  <div id="hist"></div>
 </div>
 
 <div id="alert">
@@ -234,6 +236,17 @@ function jst(s) { // "YYYY/MM/DD HH:MM:SS" (JST) -> epoch ms
 }
 const INT_RANK = s => { const i = CLASSES.findIndex(c => c[0] === String(s)); return i < 0 ? -1 : i; };
 let cur = null; // last shown report: {id, serial, warn, rank}
+// ---------- display history (shown on standby, kept across reloads) ----------
+let HIST = []; try { HIST = JSON.parse(localStorage.getItem('eewHist') || '[]'); } catch (err) {}
+function histAdd(text) {
+  const t = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const d = new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+  HIST.unshift(`${d} ${t}  ${text}`); HIST = HIST.slice(0, 10);
+  try { localStorage.setItem('eewHist', JSON.stringify(HIST)); } catch (err) {}
+  histDraw();
+}
+function histDraw() { $('hist').textContent = HIST.length ? '画面の切り替わり履歴（新しい順）\n' + HIST.join('\n') : ''; }
+histDraw();
 function show(e) {
   // follow-up handling: same EventID -> update in place; drop stale/out-of-order reports
   const sameEvent = cur && cur.id === e.EventID && document.body.classList.contains('on');
@@ -247,6 +260,7 @@ function show(e) {
   else sound = 'update';
   cur = { id: e.EventID, serial: +e.Serial || 0, warn: warn || (sameEvent && cur.warn), rank: Math.max(rank, sameEvent ? cur.rank : -1) };
   render(e, sameEvent);
+  histAdd(`${(e._replay ? '再現 ' : e.isTraining ? '訓練 ' : e._test ? 'テスト ' : '')}${e.isWarn ? '警報' : '予報'} ${e.Hypocenter || ''} ${e.isFinal ? '最終報' : '第' + e.Serial + '報'} 震度${e.MaxIntensity}`);
   try { Sound.duck(false); Sound[sound](); } catch (err) {}
   lastSound = { type: sound, at: Date.now() };
   try { Voice.announce(e, sound, sameEvent); } catch (err) {}
@@ -419,7 +433,7 @@ function pollTest() {
   fetch('test.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(t => {
     if (!t || !t.id) return;
     if (testSeen === null) { testSeen = t.id; return; }            // ignore whatever was there at load time
-    if (t.id !== testSeen && Math.abs(Date.now() / 1000 - (t.at || 0)) < 600) { testSeen = t.id; runDemo(t.demo || 'drill'); }
+    if (t.id !== testSeen && Math.abs(Date.now() / 1000 - (t.at || 0)) < 600) { testSeen = t.id; histAdd('テスト指示を受信 → 6秒後に開始'); runDemo(t.demo || 'drill'); }
   }).catch(() => {});
 }
 pollTest(); setInterval(pollTest, 15000);
