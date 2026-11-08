@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>緊急地震速報モニター</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: #fff;
+    font-family: "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", sans-serif; }
+  /* ---------- standby ---------- */
+  #standby { position: fixed; left: 6vw; top: 8vh; color: #555; transition: transform 2s; }
+  #clock { font-size: 7vw; font-weight: 300; letter-spacing: .05em; }
+  #sline { font-size: 1.6vw; margin-top: .5vw; }
+  .dot { display: inline-block; width: 1vw; height: 1vw; border-radius: 50%; background: #555; margin-right: .6vw; vertical-align: middle; }
+  .dot.ok { background: #2e7d32; } .dot.down { background: #b71c1c; }
+  /* ---------- alert ---------- */
+  #alert { position: fixed; inset: 0; display: none; }
+  body.on #alert { display: block; } body.on #standby { display: none; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; background: #0a1a2e; }
+  #ovl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; will-change: transform; }
+  #bar { position: absolute; left: 0; right: 0; top: 0; padding: 1.2vw 2vw; display: flex; align-items: baseline;
+    justify-content: space-between; font-weight: 900; box-shadow: 0 .4vw 1vw rgba(0,0,0,.5); }
+  .yoho #bar { background: #f9a825; color: #111; }
+  .keiho #bar { background: #c62828; color: #fff; }
+  .cancel #bar { background: #455a64; color: #fff; }
+  #title { font-size: 3.6vw; letter-spacing: .04em; }
+  #serial { font-size: 2.2vw; }
+  #panel { position: absolute; left: 1.6vw; top: 8.6vw; width: 31vw; padding: 1.4vw 1.6vw; box-sizing: border-box;
+    background: rgba(0,0,0,.72); border-radius: 1vw; }
+  #tags { font-size: 1.6vw; font-weight: 800; min-height: 2vw; margin-bottom: .6vw; }
+  #tags span { background: #fff; color: #111; padding: .1vw .7vw; border-radius: .4vw; margin-right: .6vw; }
+  #hypo { font-size: 3.6vw; font-weight: 900; line-height: 1.15; }
+  #mag { font-size: 2.3vw; font-weight: 800; margin: .5vw 0 1vw; }
+  #introw { display: flex; align-items: center; gap: 1.2vw; }
+  #intlabel { font-size: 1.8vw; font-weight: 800; line-height: 1.3; }
+  #int { font-size: 9vw; font-weight: 900; line-height: 1; padding: .6vw 1.4vw; border-radius: 1vw; background: #fff; color: #111; min-width: 10vw; text-align: center; }
+  #areas { font-size: 1.6vw; font-weight: 700; margin-top: 1vw; max-height: 16vh; overflow: hidden; line-height: 1.4; }
+  #times { font-size: 1.5vw; font-weight: 700; margin-top: 1vw; opacity: .85; }
+  #legend { position: absolute; right: 1.6vw; bottom: 1.4vw; background: rgba(0,0,0,.7); border-radius: .8vw;
+    padding: .8vw 1vw; font-size: 1.2vw; font-weight: 700; }
+  #legend .row { display: flex; gap: .3vw; margin-top: .4vw; }
+  #legend .sw { width: 2.4vw; height: 1.8vw; display: flex; align-items: center; justify-content: center; font-size: 1vw; border-radius: .2vw; }
+  #wavekey { margin-top: .5vw; }
+  #wavekey i { display: inline-block; width: 1.8vw; height: 0; border-top: .3vw solid; vertical-align: middle; margin: 0 .4vw 0 .8vw; }
+  .flash #bar { animation: flash .5s steps(1) 6; }
+  @keyframes flash { 50% { background: #fff; color: #111; } }
+</style>
+</head>
+<body>
+<div id="standby">
+  <div id="clock">--:--</div>
+  <div id="sline"><span id="dot" class="dot"></span><span id="stext">接続中…</span></div>
+</div>
+
+<div id="alert">
+  <svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <g id="regions" stroke="#1d2633" stroke-linejoin="round"></g>
+    <path id="prefborder" fill="none" stroke="#e6ebf0" stroke-opacity=".7" stroke-linejoin="round"/>
+    <g id="official" fill="none" stroke="#fff" stroke-linejoin="round"></g>
+  </svg>
+  <!-- moving parts on their own layer so the map is not re-rasterised while waves spread -->
+  <svg id="ovl" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <circle id="pwave" fill="none" stroke="#4fc3ff" r="0"/>
+    <circle id="swave" fill="none" stroke="#ff5252" r="0"/>
+    <g id="epi"></g>
+  </svg>
+  <div id="bar"><div id="title">緊急地震速報</div><div id="serial"></div></div>
+  <div id="panel">
+    <div id="tags"></div>
+    <div id="hypo">-</div>
+    <div id="mag"></div>
+    <div id="introw"><div id="intlabel">予想<br>最大震度</div><div id="int">-</div></div>
+    <div id="areas"></div>
+    <div id="times"></div>
+  </div>
+  <div id="legend">
+    <div>地域ごとの予想震度</div>
+    <div style="font-size:1vw;opacity:.85">白枠＝気象庁が発表した地域／他は推計</div>
+    <div class="row" id="lrow"></div>
+    <div id="wavekey"><i style="border-color:#4fc3ff"></i>P波<i style="border-color:#ff5252"></i>S波</div>
+  </div>
+</div>
+
+<script src="japan_map.js"></script>
+<script src="voice/hypo.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const CLASSES = [ // [label, lower bound of instrumental intensity, bg, fg]
+  ['1',0.5,'#f2f2ff','#111'],['2',1.5,'#00aaff','#111'],['3',2.5,'#0041ff','#fff'],['4',3.5,'#fae696','#111'],
+  ['5弱',4.5,'#ffe600','#111'],['5強',5.0,'#ff9900','#111'],['6弱',5.5,'#ff2800','#fff'],['6強',6.0,'#a50021','#fff'],['7',6.5,'#b40068','#fff']];
+const COLOR = Object.fromEntries(CLASSES.map(c => [c[0], c]));
+const SVGNS = 'http://www.w3.org/2000/svg';
+let hideTimer = null, lastEvent = null, waveTimer = null, clockOffset = 0;
+
+// ---------- map setup ----------
+const M = window.JMAP, LAND = '#4a5361';
+const norm = s => String(s || '').normalize('NFKC').replace(/\s/g, '');
+const REG = M.regions.map(r => {
+  const el = document.createElementNS(SVGNS, 'path'); el.setAttribute('d', r.d); el.setAttribute('fill', LAND);
+  $('regions').appendChild(el); return { ...r, key: norm(r.n), el };
+});
+const REG_BY_NAME = Object.fromEntries(REG.map(r => [r.key, r]));
+$('prefborder').setAttribute('d', M.prefBorder);
+const proj = (lon, lat) => [(lon - M.lon0) * M.kx, -(lat - M.lat0) * M.ky];
+// '5-' / '5弱' style -> class label; returns highest of the given values
+const SHINDO_ALIAS = { '5-': '5弱', '5+': '5強', '6-': '6弱', '6+': '6強' };
+function topClass(...vals) {
+  let best = -1;
+  for (const v of vals) { const s = SHINDO_ALIAS[norm(v)] || norm(v); const i = CLASSES.findIndex(c => c[0] === s); if (i > best) best = i; }
+  return best;
+}
+function classOf(I) { let k = -1; CLASSES.forEach((c, i) => { if (I >= c[1]) k = i; }); return k; }
+$('lrow').innerHTML = CLASSES.map(c => `<div class="sw" style="background:${c[2]};color:${c[3]}">${c[0]}</div>`).join('');
+function setView(cx, cy, half) {
+  const ar = innerWidth / innerHeight, w = half * 2 * ar, h = half * 2;
+  // shift so the epicentre sits right of the info panel
+  const vb = `${cx - w * 0.6} ${cy - h * 0.5} ${w} ${h}`;
+  $('map').setAttribute('viewBox', vb); $('ovl').setAttribute('viewBox', vb);
+  const s = h / innerHeight; // km per px
+  $('regions').setAttribute('stroke-width', 0.8 * s);
+  $('prefborder').setAttribute('stroke-width', 1.6 * s);
+  $('official').setAttribute('stroke-width', 5 * s);
+  $('pwave').setAttribute('stroke-width', 4 * s);
+  $('swave').setAttribute('stroke-width', 5 * s);
+  return s;
+}
+setView(0, 100, 900);
+
+// ---------- simple intensity estimate (Si & Midorikawa 1999 + Midorikawa et al. 1999) ----------
+function intensityAt(Mw, depth, R) {
+  const X = Math.max(Math.hypot(R, depth) - 0.5 * Math.pow(10, 0.5 * Mw - 1.85), 3);
+  const lgPGV600 = 0.58 * Mw + 0.0038 * depth - 1.29 - Math.log10(X + 0.0028 * Math.pow(10, 0.5 * Mw)) - 0.002 * X;
+  const pgv = Math.pow(10, lgPGV600) * 1.41;
+  return 2.68 + 1.72 * Math.log10(pgv);
+}
+function radiusFor(Mw, depth, I) {
+  if (intensityAt(Mw, depth, 0) < I) return 0;
+  let lo = 0, hi = 2000;
+  for (let k = 0; k < 40; k++) { const mid = (lo + hi) / 2; (intensityAt(Mw, depth, mid) >= I) ? lo = mid : hi = mid; }
+  return lo;
+}
+
+// ---------- standby ----------
+function tick() {
+  const d = new Date();
+  $('clock').textContent = d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+  const m = d.getMinutes();
+  $('standby').style.transform = `translate(${(m % 6) * 10}vw, ${(Math.floor(m / 6) % 5) * 12}vh)`;
+}
+setInterval(tick, 10000); tick();
+function setFeed(s) {
+  $('dot').className = 'dot ' + (s === 'ok' ? 'ok' : s === 'down' ? 'down' : '');
+  $('stext').textContent = s === 'ok' ? '緊急地震速報 待機中（直接受信）' : s === 'down' ? '受信サーバーに再接続中…' : '接続中…';
+}
+
+// ---------- alert sounds (original; FM bells + reverb, Web Audio) ----------
+const Sound = (() => {
+  let ac = null, out = null, rev = null, current = [];
+  const n = m => 440 * Math.pow(2, (m - 69) / 12);
+  function init() {
+    if (ac) { ac.resume(); return; }
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.connect(ac.destination);
+    out = ac.createGain(); out.gain.value = 0.9; out.connect(comp);
+    // generated hall reverb
+    const len = ac.sampleRate * 2.2, ir = ac.createBuffer(2, len, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    rev = ac.createConvolver(); rev.buffer = ir;
+    const wet = ac.createGain(); wet.gain.value = 0.32; rev.connect(wet); wet.connect(out);
+  }
+  function stop() { current.forEach(s => { try { s.stop(); } catch (e) {} }); current = []; }
+  function track(s) { current.push(s); s.onended = () => { current = current.filter(x => x !== s); }; return s; }
+  // bell: FM pair with inharmonic modulator + soft octave partial, stereo placed
+  function bell(t, midi, vol = 0.22, dur = 1.6, pan = 0) {
+    const f = n(midi), car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), g = ac.createGain();
+    const p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+    car.frequency.value = f; mod.frequency.value = f * 3.5;
+    mg.gain.setValueAtTime(f * 2.2, t); mg.gain.exponentialRampToValueAtTime(f * 0.05, t + dur);
+    mod.connect(mg); mg.connect(car.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const o2 = ac.createOscillator(), g2 = ac.createGain(); o2.frequency.value = f * 2.01;
+    g2.gain.setValueAtTime(0.0001, t); g2.gain.exponentialRampToValueAtTime(vol * 0.35, t + 0.004); g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.5);
+    car.connect(g); o2.connect(g2); g2.connect(g);
+    if (p) { p.pan.value = pan; g.connect(p); p.connect(out); p.connect(rev); } else { g.connect(out); g.connect(rev); }
+    [car, mod, o2].forEach(o => { track(o); o.start(t); o.stop(t + dur + 0.05); });
+  }
+  // urgent tone: detuned saws through a sweeping lowpass, with tremolo
+  function horn(t, midi, dur, vol = 0.16) {
+    const lp = ac.createBiquadFilter(), g = ac.createGain(), trem = ac.createOscillator(), tg = ac.createGain();
+    lp.type = 'lowpass'; lp.Q.value = 6; lp.frequency.setValueAtTime(700, t); lp.frequency.exponentialRampToValueAtTime(3200, t + dur * 0.6);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.03);
+    g.gain.setValueAtTime(vol, t + dur - 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    trem.frequency.value = 9; tg.gain.value = vol * 0.35; trem.connect(tg); tg.connect(g.gain);
+    [-8, 8].forEach(dt => { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = n(midi); o.detune.value = dt;
+      o.connect(lp); track(o); o.start(t); o.stop(t + dur + 0.02); });
+    lp.connect(g); g.connect(out); g.connect(rev); track(trem); trem.start(t); trem.stop(t + dur);
+  }
+  function thump(t, vol = 0.7) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.35);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    o.connect(g); g.connect(out); track(o); o.start(t); o.stop(t + 0.55);
+  }
+  const at = () => ac.currentTime + 0.05;
+  return {
+    // lower the alarm under the spoken announcement
+    duck(on) { if (!ac) return; const t = ac.currentTime; out.gain.cancelScheduledValues(t);
+      out.gain.setTargetAtTime(on ? 0.18 : 0.9, t, 0.12); },
+    // 予報 第1報: rising three-bell motif ×3, then a sustained shimmer
+    forecast() { init(); stop(); const t0 = at();
+      for (let r = 0; r < 3; r++) { const t = t0 + r * 1.3; bell(t, 76, .22, 1.8, -.4); bell(t + .16, 81, .22, 1.8, 0); bell(t + .32, 85, .24, 2.2, .4); }
+      for (let k = 0; k < 6; k++) bell(t0 + 4.1 + k * 0.5, k % 2 ? 88 : 85, .1, 1.2, k % 2 ? .5 : -.5);
+    },
+    // 警報 第1報 / 予報→警報: low hits + alternating urgent tones + bells, ~10 s
+    warning() { init(); stop(); const t0 = at();
+      for (let r = 0; r < 8; r++) { const t = t0 + r * 1.2;
+        thump(t); horn(t, 83, .5); horn(t + .6, 78, .5);
+        bell(t, 95, .12, 1, -.6); bell(t + .6, 90, .12, 1, .6); }
+      bell(t0 + 9.6, 83, .25, 2.5); bell(t0 + 9.6, 90, .18, 2.5);
+    },
+    // 続報 (no escalation): two soft bells
+    update() { init(); const t = at(); bell(t, 81, .16, 1.4, -.3); bell(t + .18, 85, .16, 1.6, .3); },
+    // 続報 with higher intensity: quicker four-bell rise
+    escalate() { init(); stop(); const t = at(); [76, 81, 85, 88].forEach((m, i) => bell(t + i * .12, m, .22, 1.8, (i - 1.5) / 2)); thump(t, .5); },
+    // 取消: gentle falling pair
+    cancel() { init(); stop(); const t = at(); bell(t, 84, .16, 1.8, .3); bell(t + .35, 79, .16, 2.4, -.3); },
+  };
+})();
+
+// ---------- render ----------
+function jst(s) { // "YYYY/MM/DD HH:MM:SS" (JST) -> epoch ms
+  const m = /(\d+)\/(\d+)\/(\d+) (\d+):(\d+):(\d+)/.exec(s || ''); if (!m) return null;
+  return Date.UTC(+m[1], m[2] - 1, +m[3], m[4] - 9, +m[5], +m[6]);
+}
+const INT_RANK = s => { const i = CLASSES.findIndex(c => c[0] === String(s)); return i < 0 ? -1 : i; };
+let cur = null; // last shown report: {id, serial, warn, rank}
+function show(e) {
+  // follow-up handling: same EventID -> update in place; drop stale/out-of-order reports
+  const sameEvent = cur && cur.id === e.EventID && document.body.classList.contains('on');
+  if (sameEvent && +e.Serial <= cur.serial && !e.isCancel) { ack(e, 'stale'); return; }
+  const rank = INT_RANK(e.MaxIntensity), warn = !!e.isWarn;
+  let sound;
+  if (e.isCancel) sound = 'cancel';
+  else if (!sameEvent) sound = warn ? 'warning' : 'forecast';
+  else if (warn && !cur.warn) sound = 'warning';            // 予報 -> 警報 upgrade
+  else if (rank > cur.rank) sound = 'escalate';             // higher expected intensity
+  else sound = 'update';
+  cur = { id: e.EventID, serial: +e.Serial || 0, warn: warn || (sameEvent && cur.warn), rank: Math.max(rank, sameEvent ? cur.rank : -1) };
+  render(e, sameEvent);
+  try { Sound.duck(false); Sound[sound](); } catch (err) {}
+  lastSound = { type: sound, at: Date.now() };
+  try { Voice.announce(e, sound, sameEvent); } catch (err) {}
+  ack(e, sound);
+}
+
+// ---------- spoken announcement from pre-recorded clips (no server needed) ----------
+let lastSound = { type: null, at: 0 };
+const LEAD = { forecast: 2600, warning: 2400, escalate: 900, update: 700, cancel: 1200 };
+const Voice = (() => {
+  const ac = new (window.AudioContext || window.webkitAudioContext)();
+  const buf = {}; let playing = [], timer = null;
+  const files = ['head_test','head_drill','head_replay','eew','keikai','warn_switch','zokuho','saishu','cancel']
+    .concat([...Array(9).keys()].flatMap(k => ['max_' + k, 'up_' + k]))
+    .concat(Object.values(window.HYPO_CLIPS || {}));
+  files.forEach(f => fetch('voice/' + f + '.m4a').then(r => r.arrayBuffer()).then(d => ac.decodeAudioData(d)).then(b => { buf[f] = b; }).catch(() => {}));
+  function stop() { playing.forEach(s => { try { s.stop(); } catch (e) {} }); playing = []; clearTimeout(timer); }
+  function play(parts) {
+    stop(); ac.resume();
+    let t = ac.currentTime + 0.05; const list = parts.filter(p => p && buf[p]);
+    if (!list.length) return;
+    Sound.duck(true);
+    list.forEach(p => { const s = ac.createBufferSource(); s.buffer = buf[p]; s.connect(ac.destination); s.start(t); playing.push(s); t += buf[p].duration + 0.06; });
+    timer = setTimeout(() => Sound.duck(false), (t - ac.currentTime) * 1000 + 100);
+  }
+  return {
+    announce(e, sound, sameEvent) {
+      const head = e._test ? 'head_test' : e._replay ? 'head_replay' : e.isTraining ? 'head_drill' : null;
+      const k = INT_RANK(e.MaxIntensity), max = k >= 0 ? 'max_' + k : null, up = k >= 0 ? 'up_' + k : null;
+      const hypo = (window.HYPO_CLIPS || {})[String(e.Hypocenter || '').replace(/^テスト（(.*)）$/, '$1')];
+      let parts = null;
+      if (sound === 'cancel') parts = [head, 'cancel'];
+      else if (sound === 'forecast') parts = [head, 'eew', hypo, max];
+      else if (sound === 'warning') parts = sameEvent ? [head, 'warn_switch', 'keikai', max] : [head, 'eew', 'keikai', hypo, max];
+      else if (sound === 'escalate') parts = [head, 'zokuho', up];
+      else if (e.isFinal) parts = [head, 'saishu', max];
+      if (!parts) return;
+      clearTimeout(timer);
+      const wait = Math.max(0, (LEAD[sound] || 0) - (Date.now() - lastSound.at));
+      timer = setTimeout(() => play(parts), wait);
+    },
+  };
+})();
+function ack() {}
+function render(e, sameEvent) {
+  if (e._recv) clockOffset = e._recv * 1000 - Date.now();
+  const warn = !!e.isWarn, cancel = !!e.isCancel;
+  const a = $('alert');
+  a.className = cancel ? 'cancel' : warn ? 'keiho' : 'yoho';
+  $('title').textContent = cancel ? '緊急地震速報 取消' : (e.Title || (warn ? '緊急地震速報（警報）' : '緊急地震速報（予報）'));
+  $('serial').textContent = e.isFinal ? '最終報' : `第${e.Serial ?? '?'}報`;
+  const tags = [];
+  if (e._test) tags.push('テスト表示'); if (e.isTraining) tags.push('訓練'); if (e._replay) tags.push('再現');
+  if (e.isAssumption) tags.push('仮定震源要素'); if (e.isSea) tags.push('海域');
+  $('tags').innerHTML = tags.map(t => `<span>${t}</span>`).join('');
+  const mi = String(e.MaxIntensity ?? '不明'), c = COLOR[mi];
+  $('int').textContent = cancel ? '-' : mi;
+  $('int').style.background = c ? c[2] : '#fff'; $('int').style.color = c ? c[3] : '#111';
+  $('hypo').textContent = e.Hypocenter || '震源不明';
+  const Mag = +(e.Magunitude ?? e.Magnitude), depth = +(e.Depth ?? 10);
+  $('mag').textContent = `M${isNaN(Mag) ? '-' : Mag.toFixed(1)}　深さ ${isNaN(depth) ? '-' : depth}km`;
+  const areas = (e.WarnArea || []).map(w => w.Chiiki).filter(Boolean);
+  $('areas').textContent = areas.length ? (warn ? '強い揺れに警戒：' : '揺れが予想される地域：') + areas.slice(0, 16).join('・') + (areas.length > 16 ? ' ほか' : '') : '';
+  $('times').textContent = [e.OriginTime && '発生 ' + e.OriginTime.slice(11), e.AnnouncedTime && '発表 ' + e.AnnouncedTime.slice(11)].filter(Boolean).join('　');
+
+  // map
+  const lat = +e.Latitude, lon = +e.Longitude, epi = $('epi'), off = $('official');
+  epi.innerHTML = ''; off.innerHTML = '';
+  REG.forEach(r => r.el.setAttribute('fill', LAND));
+  clearInterval(waveTimer); $('pwave').setAttribute('r', 0); $('swave').setAttribute('r', 0);
+  if (!isNaN(lat) && !isNaN(lon) && !cancel) {
+    const [x, y] = proj(lon, lat), Mw = Math.min(isNaN(Mag) ? 5 : Mag, 8.5);
+    const half = Mw < 5 ? 220 : Mw < 6 ? 320 : Mw < 7 ? 480 : 700;
+    const s = setView(x, y, half);
+    // official per-region forecasts (警報 WarnArea) take priority over the estimate
+    const official = {};
+    for (const w of (e.WarnArea || [])) {
+      const r = REG_BY_NAME[norm(w.Chiiki)]; if (!r) continue;
+      const k = topClass(w.Shindo1, w.Shindo2); official[r.key] = k;
+    }
+    for (const r of REG) {
+      let k = official[r.key];
+      if (k === undefined) k = classOf(intensityAt(Mw, depth, Math.hypot(r.x - x, r.y - y)));
+      else {
+        const o = document.createElementNS(SVGNS, 'path'); o.setAttribute('d', r.d); off.appendChild(o);
+        if (k < 0) k = classOf(intensityAt(Mw, depth, Math.hypot(r.x - x, r.y - y)));
+      }
+      if (k >= 0) r.el.setAttribute('fill', CLASSES[k][2]);
+    }
+    const k = 14 * s;
+    epi.innerHTML = `<path d="M${x - k},${y - k}L${x + k},${y + k}M${x + k},${y - k}L${x - k},${y + k}" stroke="#fff" stroke-width="${9 * s}" stroke-linecap="round"/>` +
+                    `<path d="M${x - k},${y - k}L${x + k},${y + k}M${x + k},${y - k}L${x - k},${y + k}" stroke="#e00000" stroke-width="${5 * s}" stroke-linecap="round"/>`;
+    const origin = jst(e.OriginTime);
+    if (origin) {
+      ['pwave', 'swave'].forEach(id => { $(id).setAttribute('cx', x); $(id).setAttribute('cy', y); });
+      const step = () => {
+        const t = (Date.now() + clockOffset - origin) / 1000;
+        const surf = v => { const d = v * t; return d > depth ? Math.sqrt(d * d - depth * depth) : 0; };
+        $('pwave').setAttribute('r', surf(7.0)); $('swave').setAttribute('r', surf(4.0));
+        if (t > 400) clearInterval(waveTimer);
+      };
+      step(); waveTimer = setInterval(step, 100);
+    }
+  } else {
+    setView(0, 100, 900);
+  }
+
+  document.body.classList.add('on');
+  a.classList.remove('flash'); void a.offsetWidth; a.classList.add('flash');
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => { document.body.classList.remove('on'); clearInterval(waveTimer); }, cancel ? 30000 : 180000);
+}
+
+// ---------- live feed: Chromecast connects straight to Wolfx ----------
+const FEED = 'wss://ws-api.wolfx.jp/jma_eew';
+let ws = null, lastMsg = 0, backoff = 1000, reconnectTimer = null;
+function fresh(e) { const t = jst(e.AnnouncedTime); return !t || Date.now() - t < 10 * 60 * 1000; }
+function connectFeed() {
+  clearTimeout(reconnectTimer);
+  try { ws = new WebSocket(FEED); } catch (err) { return retry(); }
+  ws.onopen = () => { setFeed('ok'); backoff = 1000; lastMsg = Date.now(); };
+  ws.onmessage = ev => {
+    lastMsg = Date.now();
+    let m; try { m = JSON.parse(ev.data); } catch (err) { return; }
+    if (m.type === 'heartbeat') { try { ws.send('ping'); } catch (err) {} }
+    else if (m.type === 'jma_eew' && fresh(m)) { m._recv = Date.now() / 1000; show(m); }
+  };
+  ws.onclose = () => { setFeed('down'); retry(); };
+  ws.onerror = () => { try { ws.close(); } catch (err) {} };
+}
+function retry() { clearTimeout(reconnectTimer); reconnectTimer = setTimeout(connectFeed, backoff); backoff = Math.min(backoff * 2, 30000); }
+// heartbeat watchdog: Wolfx sends one every 60 s; silence for 150 s means a dead link
+setInterval(() => { if (ws && ws.readyState === 1 && Date.now() - lastMsg > 150000) { try { ws.close(); } catch (err) {} } }, 10000);
+connectFeed();
+
+// ---------- built-in demos: ?demo=replay (real 2026-11-08 Kumamoto sequence) / ?demo=drill ----------
+const DEMOS = {
+  replay: { flag: '_replay', hypo: '熊本県天草・芦北地方', warnFrom: 99, reports: [
+    [8.0, 32.5, 130.6, 10, 1.0, '4', [['熊本県熊本','4','4']]], [8.3, 32.5, 130.6, 10, 3.9, '4', [['熊本県熊本','4','4']]],
+    [9.6, 32.5, 130.6, 10, 4.6, '4', [['熊本県熊本','4','4'],['熊本県天草・芦北','3','4']]], [13.4, 32.6, 130.6, 20, 4.6, '4', [['熊本県熊本','4','4']]],
+    [13.45, 32.6, 130.6, 10, 4.5, '4', [['熊本県熊本','4','4'],['熊本県天草・芦北','4','4']]], [33.4, 32.6, 130.6, 20, 4.2, '4', [['熊本県熊本','4','4']]],
+    [52.3, 32.6, 130.6, 10, 4.2, '4', [['熊本県熊本','4','4']]] ] },
+  drill: { flag: 'isTraining', hypo: '茨城県沖', warnFrom: 2, reports: [
+    [6, 36.45, 141.05, 60, 5.9, '4', []], [10, 36.45, 141.05, 50, 6.4, '5弱', []],
+    [14, 36.45, 141.05, 50, 6.8, '5強', [['茨城県北部','5弱','5強'],['茨城県南部','5弱','5弱'],['福島県浜通り','4','5弱'],['福島県中通り','4','5弱'],['栃木県南部','4','5弱'],['千葉県北東部','4','5弱']]],
+    [20, 36.45, 141.05, 50, 7.0, '6弱', [['茨城県北部','5強','6弱'],['茨城県南部','5弱','5強'],['福島県浜通り','5弱','5強'],['福島県中通り','5弱','5弱'],['栃木県南部','5弱','5弱'],['栃木県北部','4','5弱'],['千葉県北東部','5弱','5弱'],['千葉県北西部','4','5弱'],['埼玉県南部','4','5弱'],['東京都23区','4','5弱'],['宮城県南部','4','5弱']]],
+    [26, 36.45, 141.05, 50, 7.0, '6弱', []], [41, 36.45, 141.05, 50, 7.0, '6弱', []] ] },
+};
+function fmtJST(ms) { return new Date(ms + 9 * 3600e3).toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/'); }
+function runDemo(name) {
+  const d = DEMOS[name]; if (!d) return;
+  const origin = Date.now() - d.reports[0][0] * 1000 + 6000, id = 'DEMO' + Date.now();
+  let lastAreas = [];
+  d.reports.forEach(([t, lat, lon, depth, M, mi, areas], i) => setTimeout(() => {
+    if (areas.length) lastAreas = areas;
+    const warn = i >= d.warnFrom;
+    const e = { type: 'jma_eew', Title: warn ? '緊急地震速報（警報）' : '緊急地震速報（予報）', EventID: id, Serial: i + 1,
+      AnnouncedTime: fmtJST(Date.now()), OriginTime: fmtJST(origin), Hypocenter: d.hypo, Latitude: lat, Longitude: lon,
+      Magunitude: M, Depth: depth, MaxIntensity: mi, isWarn: warn, isFinal: i === d.reports.length - 1, isCancel: false,
+      isSea: /沖|灘|近海|湾/.test(d.hypo), WarnArea: lastAreas.map(a => ({ Chiiki: a[0], Shindo1: a[1], Shindo2: a[2] })), _recv: Date.now() / 1000 };
+    e[d.flag] = true; show(e);
+  }, 6000 + (t - d.reports[0][0]) * 1000));
+}
+const demo = new URLSearchParams(location.search).get('demo'); if (demo) runDemo(demo);
+</script>
+</body>
+</html>
