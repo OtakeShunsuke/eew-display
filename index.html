@@ -229,14 +229,30 @@ function radiusFor(Mw, depth, I) {
 
 // ---------- standby dashboard ----------
 const WEEK = '日月火水木金土';
+// device clock correction: GitHub Pages' Date header (1 s resolution) bounds the offset; intersect samples
+let netOffset = 0, offLo = -Infinity, offHi = Infinity;
+function syncClock(n) {
+  const t0 = Date.now();
+  fetch('test.json?sync=' + t0, { cache: 'no-store' }).then(r => {
+    const t1 = Date.now(), d = Date.parse(r.headers.get('date') || '');
+    if (!d || t1 - t0 > 2000) return;
+    let lo = Math.max(offLo, d - t1), hi = Math.min(offHi, d + 1000 - t0);
+    if (lo > hi) { lo = d - t1; hi = d + 1000 - t0; }          // clock jumped: restart
+    offLo = lo; offHi = hi; netOffset = (lo + hi) / 2; if (typeof minuteLoop === 'function') minuteLoop();
+  }).catch(() => {}).finally(() => { if (n > 1) setTimeout(() => syncClock(n - 1), 1370); });
+}
+syncClock(8); setInterval(() => { offLo = -Infinity; offHi = Infinity; syncClock(6); }, 30 * 60 * 1000);
 function tick() {
-  const d = new Date();
+  const d = new Date(Date.now() + netOffset);
   $('clock').textContent = d.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
   $('date').textContent = `${d.getMonth() + 1}月${d.getDate()}日（${WEEK[d.getDay()]}）`;
   const m = d.getMinutes(); // tiny drift against burn-in
   $('standby').style.transform = `translate(${(m % 5 - 2) * 0.25}vw, ${(Math.floor(m / 5) % 5 - 2) * 0.25}vh)`;
 }
-setInterval(tick, 10000); tick();
+
+let minuteTimer = null;
+function minuteLoop() { clearTimeout(minuteTimer); tick(); const now = Date.now() + netOffset; minuteTimer = setTimeout(minuteLoop, 60000 - now % 60000 + 30); }
+minuteLoop();
 function setFeed(s) {
   $('dot').className = 'dot ' + (s === 'ok' ? 'ok' : s === 'down' ? 'down' : '');
   $('stext').textContent = s === 'ok' ? '緊急地震速報 待機中（直接受信）' : s === 'down' ? '受信サーバーに再接続中…' : '接続中…';
@@ -552,7 +568,7 @@ function render(e, sameEvent) {
     if (origin) {
       ['pwave', 'swave'].forEach(id => { $(id).setAttribute('cx', x); $(id).setAttribute('cy', y); });
       const step = () => {
-        const t = (Date.now() + clockOffset - origin) / 1000;
+        const t = (Date.now() + netOffset - origin) / 1000;
         const surf = v => { const d = v * t; return d > depth ? Math.sqrt(d * d - depth * depth) : 0; };
         $('pwave').setAttribute('r', surf(7.0)); $('swave').setAttribute('r', surf(4.0));
         if (t > 400) clearInterval(waveTimer);
