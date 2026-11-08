@@ -44,8 +44,6 @@
   #maptitle { position: absolute; right: 2vw; top: 2.2vw; text-align: right; font-size: 1.2vw; color: #5d6876; }
   #maptitle b { display: block; font-size: 1.6vw; color: #1d2733; font-weight: 700; }
   #slegend { position: absolute; right: 2vw; bottom: 1.6vw; display: flex; gap: .25vw; align-items: center; font-size: .9vw; color: #4f5a67; font-weight: 700; }
-  #keytoast { position: fixed; left: 50%; top: 3vh; transform: translateX(-50%); background: #16202b; color: #fff; font-size: 2vw; font-weight: 800;
-    padding: .8vw 2vw; border-radius: 1vw; z-index: 99; display: none; box-shadow: 0 .4vw 1.6vw rgba(0,0,0,.3); }
   #slegend .badge { width: 2vw; height: 1.4vw; font-size: .8vw; border-radius: .2vw; }
   /* ---------- alert ---------- */
   #alert { position: fixed; inset: 0; display: none; }
@@ -110,7 +108,6 @@
     <div id="slegend"></div>
   </div>
 </div>
-<div id="keytoast"></div>
 <div id="alert">
   <svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
     <g id="regions" stroke="#1d2633" stroke-linejoin="round"></g>
@@ -505,18 +502,6 @@ function retry() { clearTimeout(reconnectTimer); reconnectTimer = setTimeout(con
 // heartbeat watchdog: Wolfx sends one every 60 s; silence for 150 s means a dead link
 setInterval(() => { if (ws && ws.readyState === 1 && Date.now() - lastMsg > 150000) { try { ws.close(); } catch (err) {} } }, 10000);
 connectFeed();
-
-// ---------- remote key test: shows every key the page receives (TV remote via HDMI-CEC) ----------
-let keyTimer = null;
-function onKey(ev) {
-  const t = `リモコン受信: ${ev.key || '?'} (code ${ev.keyCode})`;
-  $('keytoast').textContent = t; $('keytoast').style.display = 'block';
-  clearTimeout(keyTimer); keyTimer = setTimeout(() => $('keytoast').style.display = 'none', 4000);
-  histAdd(t);
-}
-window.addEventListener('keydown', onKey, true);
-document.body.tabIndex = -1; try { window.focus(); document.body.focus(); } catch (err) {}
-setInterval(() => { try { if (!document.hasFocus()) window.focus(); } catch (err) {} }, 5000);
 
 // ---------- built-in demos: ?demo=replay (real 2026-11-08 Kumamoto sequence) / ?demo=drill ----------
 const DEMOS = {
