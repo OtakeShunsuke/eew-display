@@ -43,14 +43,58 @@
   #insetlbl { position: absolute; left: 1.7vw; top: 2.2vw; font-size: .95vw; font-weight: 700; color: #5d6876; }
   #maptitle { position: absolute; right: 2vw; top: 2.2vw; text-align: right; font-size: 1.2vw; color: #5d6876; }
   #maptitle b { display: block; font-size: 1.6vw; color: #1d2733; font-weight: 700; }
-  #slegend { position: absolute; right: 2vw; bottom: 1.6vw; display: flex; gap: .25vw; align-items: center; font-size: .9vw; color: #4f5a67; font-weight: 700; }
+  #slegend { position: absolute; right: 2vw; bottom: 3.8vw; display: flex; gap: .25vw; align-items: center; font-size: .9vw; color: #4f5a67; font-weight: 700; }
   #slegend .badge { width: 2vw; height: 1.4vw; font-size: .8vw; border-radius: .2vw; }
   /* ---------- weather panel (rotates with the quake map) ---------- */
-  #wx { position: absolute; inset: 0; padding: 2.6vw 3vw; box-sizing: border-box; display: flex; flex-direction: column; gap: 1.6vw;
-    background: linear-gradient(160deg, #e3f0fb 0%, #f6f9fc 70%); opacity: 0; transition: opacity 1.2s; pointer-events: none; }
-  #sright.showwx #wx { opacity: 1; }
-  #smap, #inset, #insetlbl, #maptitle, #slegend { transition: opacity 1.2s; }
-  #sright.showwx #smap, #sright.showwx #inset, #sright.showwx #insetlbl, #sright.showwx #maptitle, #sright.showwx #slegend { opacity: 0; }
+  #wx { position: absolute; inset: 0; padding: 2.6vw 3vw 4.4vw; box-sizing: border-box; display: flex; flex-direction: column; gap: 1.2vw;
+    background: linear-gradient(160deg, #e3f0fb 0%, #f6f9fc 70%); }
+  .page { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s; pointer-events: none; }
+  .page.active { opacity: 1; }
+  #pg-wx.active #wx, #wx { opacity: 1; }
+  .pg { padding: 2.6vw 3vw 4.4vw; box-sizing: border-box; display: flex; flex-direction: column; gap: 1.3vw;
+    background: linear-gradient(160deg, #eef4fa 0%, #f7f9fc 70%); }
+  .phead { display: flex; justify-content: space-between; align-items: baseline; }
+  .phead b { font-size: 1.6vw; color: #1d2733; } .phead span { font-size: 1vw; color: #6b7684; }
+  #pager { position: absolute; left: 0; right: 0; bottom: 1.1vw; display: flex; justify-content: center; gap: .5vw; z-index: 5; }
+  #pager span { font-size: .85vw; font-weight: 700; color: #6b7684; background: rgba(255,255,255,.75); border: 1px solid #d3dce6;
+    border-radius: 2vw; padding: .2vw .9vw; position: relative; overflow: hidden; }
+  #pager span.on { color: #fff; background: #3b5b7d; border-color: #3b5b7d; }
+  #pager span.on i { position: absolute; left: 0; bottom: 0; height: .2vw; background: #9cc3ea; animation: pbar linear forwards; }
+  @keyframes pbar { from { width: 0; } to { width: 100%; } }
+  /* detail page */
+  #dtop { display: flex; gap: 1.6vw; align-items: center; }
+  #dbadge { width: 9vw; height: 9vw; font-size: 4.6vw; border-radius: 1vw; flex: none; }
+  #dplace { font-size: 2.8vw; font-weight: 900; color: #16202b; line-height: 1.15; }
+  #dmeta { font-size: 1.3vw; color: #4f5a67; margin-top: .4vw; line-height: 1.6; }
+  #dmini { width: 15vw; height: 11vw; margin-left: auto; flex: none; border-radius: .6vw; background: #d3e2ef; border: 1px solid #b9c6d3; }
+  #dtsu { font-size: 1.4vw; font-weight: 800; padding: .7vw 1.2vw; border-radius: .7vw; }
+  #dtsu.ok { background: #e8f5e9; color: #2e7d32; } #dtsu.warn { background: #fff3e0; color: #e65100; } #dtsu.bad { background: #c62828; color: #fff; }
+  #dpts { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: .5vw; }
+  .prow { display: grid; grid-template-columns: 3.4vw 1fr; gap: .8vw; align-items: start; font-size: 1.15vw; color: #1d2733; line-height: 1.5; }
+  .prow .badge { height: 2vw; font-size: 1.1vw; border-radius: .3vw; }
+  .prow b { color: #3b5b7d; margin-right: .4vw; }
+  /* stats page */
+  #stgrid { flex: 1; display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: auto 1fr; gap: 1vw; min-height: 0; }
+  #stbars { grid-column: 1 / 3; }
+  #stbars svg { width: 100%; height: 12vw; display: block; }
+  .kv { display: flex; gap: 1vw; }
+  .kv .card { flex: 1; padding: .7vw 1vw; }
+  .rank { display: grid; grid-template-columns: 11vw 1fr 2.6vw; gap: .6vw; align-items: center; font-size: 1.1vw; margin: .45vw 0; color: #1d2733; }
+  .rank i { display: block; height: 1.1vw; border-radius: .3vw; background: #7aa7d6; }
+  .rank span:last-child { text-align: right; color: #4f5a67; font-variant-numeric: tabular-nums; }
+  /* life page */
+  #lfgrid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 1vw; min-height: 0; }
+  #lfgrid .card { display: flex; flex-direction: column; }
+  .fcrow { display: grid; grid-template-columns: 5vw 1fr 13vw; gap: .6vw; font-size: 1.1vw; color: #1d2733; padding: .25vw 0; border-top: 1px solid #edf0f4; }
+  .fcrow b { color: #3b5b7d; } .fcrow span:last-child { color: #1e88e5; font-weight: 700; text-align: right; }
+  #dnear { padding: .8vw 1.2vw; }
+  .big { font-size: 2.6vw; font-weight: 800; color: #16202b; line-height: 1.15; }
+  .sub { font-size: 1.05vw; color: #4f5a67; margin-top: .4vw; line-height: 1.5; }
+  .chip { display: inline-block; font-size: 1.05vw; font-weight: 800; padding: .2vw .7vw; border-radius: .4vw; margin: 0 .4vw .4vw 0; }
+  .chip.adv { background: #fff59d; color: #5d4600; } .chip.wrn { background: #e53935; color: #fff; } .chip.spc { background: #6a1b9a; color: #fff; } .chip.none { background: #e8f5e9; color: #2e7d32; }
+  #wxov { font-size: 1.05vw; color: #3d4855; line-height: 1.6; background: #fff; border: 1px solid #dde3ea; border-radius: .8vw; padding: .7vw 1vw;
+    max-height: 5.2vw; overflow: hidden; }
+  #lban { display: none; background: #c62828; color: #fff; font-weight: 800; font-size: 1.2vw; padding: .6vw 1vw; border-radius: .6vw; }
   #wxhead { display: flex; justify-content: space-between; align-items: baseline; }
   #wxhead b { font-size: 1.6vw; color: #1d2733; } #wxhead span { font-size: 1vw; color: #6b7684; }
   #wxnow { display: flex; align-items: center; gap: 2vw; }
@@ -113,30 +157,67 @@
       <div id="latest"><div id="lbadge" class="badge" style="background:#e6ebf0">-</div>
         <div><div id="lplace">読み込み中…</div><div id="lmeta"></div><div id="linfo"></div></div></div>
     </div>
+    <div id="lban"></div>
     <div id="stats">
       <div class="card"><div class="ctitle">24時間</div><div class="snum" id="s24">-<small>回</small></div></div>
       <div class="card"><div class="ctitle">7日間</div><div class="snum" id="s7">-<small>回</small></div></div>
-      <div class="card"><div class="ctitle">7日間の最大</div><div class="snum" id="smax">-</div></div>
+      <div class="card"><div class="ctitle">30日間</div><div class="snum" id="s30">-<small>回</small></div></div>
     </div>
     <div class="card" id="list"><div class="ctitle">最近の地震（震度1以上）</div><div id="eqrows"></div></div>
     <div id="hist"></div>
   </div>
   <div id="sright">
-    <svg id="smap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-      <defs><g id="land"><path id="landpath" fill="#fbfcfd" stroke="#c9d2dc"/><path id="landpref" fill="none" stroke="#97a5b4"/></g></defs>
-      <use href="#land"/><g id="dots"></g>
-    </svg>
-    <div id="insetlbl">南西諸島</div>
-    <svg id="inset" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"><use href="#land"/><g id="dots2"></g></svg>
-    <div id="maptitle"><b>震源マップ</b><span id="mapsub"></span></div>
-    <div id="slegend"></div>
-    <div id="wx">
-      <div id="wxhead"><b id="wxplace">東京の天気</b><span id="wxupd"></span></div>
-      <div id="wxnow"><div id="wxicon"></div><div id="wxtemp">--<small>℃</small></div>
-        <div><div id="wxdesc">読み込み中…</div><div id="wxsub"></div></div></div>
-      <div class="wxlbl">これから</div><div class="wxrow" id="wxhours"></div>
-      <div class="wxlbl">週間</div><div class="wxrow" id="wxdays"></div>
+    <div class="page" id="pg-map">
+      <svg id="smap" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs><g id="land"><path id="landpath" fill="#fbfcfd" stroke="#c9d2dc"/><path id="landpref" fill="none" stroke="#97a5b4"/></g></defs>
+        <use href="#land"/><g id="dots"></g>
+      </svg>
+      <div id="insetlbl">南西諸島</div>
+      <svg id="inset" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"><use href="#land"/><g id="dots2"></g></svg>
+      <div id="maptitle"><b>震源マップ</b><span id="mapsub"></span></div>
+      <div id="slegend"></div>
     </div>
+    <div class="page pg" id="pg-detail">
+      <div class="phead"><b>最新の地震の詳細</b><span id="dsrc"></span></div>
+      <div id="dtop"><div id="dbadge" class="badge">-</div>
+        <div><div id="dplace">-</div><div id="dmeta"></div></div>
+        <svg id="dmini" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><use href="#land"/><g id="dstar"></g></svg></div>
+      <div id="dtsu" class="ok">-</div>
+      <div class="ctitle" style="margin-bottom:-.6vw">各地の震度</div>
+      <div id="dpts"></div>
+      <div class="card" id="dnear"></div>
+    </div>
+    <div class="page pg" id="pg-stats">
+      <div class="phead"><b>地震の統計（30日間）</b><span>気象庁 地震情報より</span></div>
+      <div class="kv" id="stkv"></div>
+      <div id="stgrid">
+        <div class="card" id="stbars"><div class="ctitle">日ごとの回数（色は最大震度）</div><svg id="stsvg" preserveAspectRatio="none"></svg></div>
+        <div class="card"><div class="ctitle">よく揺れている地域</div><div id="strank"></div></div>
+        <div class="card"><div class="ctitle">30日間で最大の地震</div><div id="stbig"></div></div>
+      </div>
+    </div>
+    <div class="page" id="pg-wx">
+      <div id="wx">
+        <div id="wxhead"><b id="wxplace">東京の天気</b><span id="wxupd"></span></div>
+        <div id="wxnow"><div id="wxicon"></div><div id="wxtemp">--<small>℃</small></div>
+          <div><div id="wxdesc">読み込み中…</div><div id="wxsub"></div></div></div>
+        <div class="wxlbl">これから</div><div class="wxrow" id="wxhours"></div>
+        <div class="wxlbl">週間</div><div class="wxrow" id="wxdays"></div>
+        <div id="wxov"></div>
+      </div>
+    </div>
+    <div class="page pg" id="pg-life">
+      <div class="phead"><b>暮らしの情報</b><span id="lfsrc">気象庁・Open-Meteo</span></div>
+      <div id="lfgrid">
+        <div class="card" style="grid-column: 1 / 3"><div class="ctitle">気象警報・注意報（<span id="lfarea">新宿区</span>）</div><div id="lfwarn">-</div><div class="sub" id="lfhead"></div>
+          <div class="ctitle" style="margin-top:1vw">気象庁の予報（<span id="fcarea">東京地方</span>）</div><div id="lffc"></div></div>
+        <div class="card"><div class="ctitle">空気の状態</div><div class="big" id="lfaqi">-</div><div class="sub" id="lfaqis"></div></div>
+        <div class="card"><div class="ctitle">日の出・日の入り</div><div class="big" id="lfsun">-</div><div class="sub" id="lfsuns"></div></div>
+        <div class="card"><div class="ctitle">紫外線・月</div><div class="big" id="lfuv">-</div><div class="sub" id="lfmoon"></div></div>
+        <div class="card"><div class="ctitle">暦</div><div class="big" id="lfhol">-</div><div class="sub" id="lfcal"></div></div>
+      </div>
+    </div>
+    <div id="pager"></div>
   </div>
 </div>
 <div id="alert">
@@ -199,7 +280,7 @@ function topClass(...vals) {
 function classOf(I) { let k = -1; CLASSES.forEach((c, i) => { if (I >= c[1]) k = i; }); return k; }
 $('lrow').innerHTML = CLASSES.map(c => `<div class="sw" style="background:${c[2]};color:${c[3]}">${c[0]}</div>`).join('');
 function setView(cx, cy, half) {
-  const ar = innerWidth / innerHeight, w = half * 2 * ar, h = half * 2;
+  const ar = (innerWidth / innerHeight) || 16 / 9, w = half * 2 * ar, h = half * 2;
   // shift so the epicentre sits right of the info panel
   const vb = `${cx - w * 0.6} ${cy - h * 0.5} ${w} ${h}`;
   $('map').setAttribute('viewBox', vb); $('ovl').setAttribute('viewBox', vb);
@@ -270,41 +351,152 @@ function ago(ms) {
   const m = Math.round((Date.now() - ms) / 60000);
   return m < 1 ? 'たった今' : m < 60 ? `${m}分前` : m < 1440 ? `${Math.floor(m / 60)}時間前` : `${Math.floor(m / 1440)}日前`;
 }
-let EQ = [], eqMd5 = '';
+let EQ = [], eqMd5 = '', P2P = null, TSU = null;
+const PREF = ['', '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県', '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県', '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'];
+const SCALE = { 10: '1', 20: '2', 30: '3', 40: '4', 45: '5弱', 50: '5強', 55: '6弱', 60: '6強', 70: '7', 46: '5弱' };
+const pad2 = n => String(n).padStart(2, '0');
+function fromJMA(list) {
+  const byE = new Map();
+  for (const x of list) {
+    if (!/震源・震度情報|震度速報|震源に関する情報/.test(x.ttl)) continue;
+    const prev = byE.get(x.eid), score = v => (v.ttl === '震源・震度情報' ? 3 : v.ttl === '震源に関する情報' ? 2 : 1) * 1e15 + +v.ctt;
+    if (!prev) { byE.set(x.eid, x); continue; }
+    const best = score(x) > score(prev) ? x : prev, other = best === x ? prev : x;
+    byE.set(x.eid, { ...best, maxi: best.maxi || other.maxi, int: best.int && best.int.length ? best.int : other.int });
+  }
+  return [...byE.values()].map(x => {
+    const m = /([+-][\d.]+)([+-][\d.]+)([+-]\d+)?/.exec(x.cod || '');
+    const t = Date.parse(x.at), d = new Date(t + 9 * 3600e3);
+    const dep = m && m[3] != null ? Math.round(-m[3] / 1000) : null;
+    return { t, time: `${d.getUTCFullYear()}/${pad2(d.getUTCMonth() + 1)}/${pad2(d.getUTCDate())} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`,
+      location: x.anm || '震源調査中', magnitude: x.mag || '-', shindo: x.maxi || '', depth: dep == null ? '-' : dep === 0 ? 'ごく浅い' : dep + 'km',
+      latitude: m ? +m[1] : NaN, longitude: m ? +m[2] : NaN, eid: x.eid, ttl: x.ttl,
+      prefs: (x.int || []).map(p => ({ name: PREF[+p.code] || p.code, maxi: p.maxi })), info: '' };
+  }).filter(e => e.t && e.shindo).sort((a, b) => b.t - a.t);
+}
 function drawQuakes() {
   if (!EQ.length) return;
   const now = Date.now(), L = EQ[0];
   $('lbadge').style.cssText = badgeStyle(L.shindo); $('lbadge').textContent = shLabel(L.shindo);
   $('lplace').textContent = L.location;
-  $('lmeta').textContent = `${L.time.slice(11)}（${ago(L.t)}） M${L.magnitude} ・ 深さ${L.depth}`;
-  $('linfo').textContent = L.info || '';
-  const d1 = EQ.filter(e => now - e.t < 864e5), d7 = EQ.filter(e => now - e.t < 7 * 864e5);
-  $('s24').innerHTML = `${d1.length}<small>回</small>`; $('s7').innerHTML = `${d7.length}<small>回</small>`;
-  const top = d7.reduce((a, e) => topClass(e.shindo) > topClass(a ? a.shindo : '') ? e : a, null);
-  $('smax').innerHTML = top ? `<span class="badge" style="${badgeStyle(top.shindo)};padding:0 .6vw;font-size:1.8vw">${shLabel(top.shindo)}</span>` : '-';
-  $('eqrows').innerHTML = EQ.slice(0, 14).map(e => `<div class="eq"><span class="t">${e.time.slice(5)}</span>` +
-    `<span class="badge" style="${badgeStyle(e.shindo)}">${shLabel(e.shindo)}</span><span class="pl">${e.location}</span><span class="m">M${e.magnitude}</span></div>`).join('');
-  // epicentres: newest drawn last (on top); older ones fade
-  const span = now - EQ[EQ.length - 1].t || 1;
-  const dots = EQ.slice().reverse().map((e, k, arr) => {
-    const [x, y] = proj(+e.longitude, +e.latitude); if (!isFinite(x)) return '';
-    const i = topClass(e.shindo), c = CLASSES[i] || CLASSES[0];
-    const r = 6 + Math.max(0, +e.magnitude || 0) ** 1.6 * 2.2, op = 0.35 + 0.65 * (1 - (now - e.t) / span);
+  $('lmeta').textContent = `${L.time.slice(5).replace('/', '月').replace(' ', '日 ')}（${ago(L.t)}） M${L.magnitude} ・ 深さ${L.depth}`;
+  $('linfo').textContent = tsunamiText(L).text;
+  const d1 = EQ.filter(e => now - e.t < 864e5), d7 = EQ.filter(e => now - e.t < 7 * 864e5), d30 = EQ.filter(e => now - e.t < 30 * 864e5);
+  $('s24').innerHTML = `${d1.length}<small>回</small>`; $('s7').innerHTML = `${d7.length}<small>回</small>`; $('s30').innerHTML = `${d30.length}<small>回</small>`;
+  $('eqrows').innerHTML = EQ.slice(0, 16).map(e => `<div class="eq"><span class="t">${e.time.slice(5)}</span>` +
+    `<span class="badge" style="${badgeStyle(e.shindo)}">${shLabel(e.shindo)}</span><span class="pl">${e.location}</span><span class="m">${e.magnitude === '-' ? '' : 'M' + e.magnitude}</span></div>`).join('');
+  // map: last 7 days (plus anything 震度4+ in 30 days); newest on top, older fade
+  const onMap = EQ.filter(e => isFinite(e.latitude) && (now - e.t < 7 * 864e5 || topClass(e.shindo) >= 3));
+  const span = 30 * 864e5;
+  const dots = onMap.slice().reverse().map((e, k, arr) => {
+    const [x, y] = proj(e.longitude, e.latitude);
+    const c = CLASSES[topClass(e.shindo)] || CLASSES[0];
+    const r = 6 + Math.max(0, +e.magnitude || 0) ** 1.6 * 2.2, op = Math.max(0.3, 1 - (now - e.t) / span);
     const newest = k === arr.length - 1;
     return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c[2]}" fill-opacity="${op.toFixed(2)}" stroke="#3a4552" stroke-opacity=".55" stroke-width="2.5"/>` +
+      (topClass(e.shindo) >= 3 && !newest ? `<text x="${x + r + 8}" y="${y + 10}" fill="#3a4552" font-size="28" font-weight="700" paint-order="stroke" stroke="#fff" stroke-width="7">${e.time.slice(5, 10)} M${e.magnitude}</text>` : '') +
       (newest ? `<circle cx="${x}" cy="${y}" r="${r + 16}" fill="none" stroke="#d81b60" stroke-width="5"/>` +
         `<text x="${x + r + 26}" y="${y + 12}" fill="#d81b60" font-size="40" font-weight="800" paint-order="stroke" stroke="#fff" stroke-width="10">最新</text>` : '');
   }).join('');
   $('dots').innerHTML = dots; $('dots2').innerHTML = dots;
-  $('mapsub').textContent = `直近${EQ.length}件 ・ ${new Date(EQ[EQ.length - 1].t).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}〜`;
+  $('mapsub').textContent = `直近7日間 ${onMap.filter(e => now - e.t < 7 * 864e5).length}件 ＋ 30日以内の震度4以上`;
+  drawDetail(); drawStats();
+}
+function tsunamiText(e) {
+  if (TSU) return { cls: 'bad', text: '津波警報・注意報が発表されています：' + TSU };
+  const p = P2P && P2P.earthquake;
+  if (p && Math.abs(Date.parse(p.time.replace(/\//g, '-') + '+09:00') - e.t) < 120000) {
+    const m = { None: ['ok', 'この地震による津波の心配はありません'], NonEffective: ['warn', '若干の海面変動が予想されますが、被害の心配はありません'],
+      Checking: ['warn', '津波の有無を調査中です'], Watch: ['bad', '津波注意報が発表されています'], Warning: ['bad', '津波警報が発表されています'] }[p.domesticTsunami];
+    if (m) return { cls: m[0], text: m[1] };
+  }
+  return { cls: 'ok', text: '' };
+}
+function drawDetail() {
+  const L = EQ[0]; if (!L) return;
+  $('dbadge').style.cssText = badgeStyle(L.shindo); $('dbadge').textContent = shLabel(L.shindo);
+  $('dplace').textContent = L.location;
+  $('dmeta').innerHTML = `発生 ${L.time.slice(0, 4)}年${+L.time.slice(5, 7)}月${+L.time.slice(8, 10)}日 ${L.time.slice(11)}（${ago(L.t)}）<br>` +
+    `マグニチュード ${L.magnitude} ・ 深さ ${L.depth}` + (isFinite(L.latitude) ? ` ・ 北緯${L.latitude}° 東経${L.longitude}°` : '');
+  const ts = tsunamiText(L); $('dtsu').className = ts.cls; $('dtsu').textContent = ts.text || '津波の情報を確認中';
+  if (isFinite(L.latitude)) {
+    const [x, y] = proj(L.longitude, L.latitude);
+    $('dmini').setAttribute('viewBox', `${x - 260} ${y - 190} 520 380`);
+    $('dstar').innerHTML = `<circle cx="${x}" cy="${y}" r="22" fill="none" stroke="#d81b60" stroke-width="6"/><path d="M${x - 12} ${y - 12}L${x + 12} ${y + 12}M${x + 12} ${y - 12}L${x - 12} ${y + 12}" stroke="#d81b60" stroke-width="7"/>`;
+  }
+  // per-point intensities from P2PQuake when it is the same quake; else per-prefecture from JMA
+  let rows = [];
+  const p = P2P && Math.abs(Date.parse(P2P.earthquake.time.replace(/\//g, '-') + '+09:00') - L.t) < 120000 ? P2P : null;
+  if (p && p.points && p.points.length) {
+    const g = {};
+    p.points.filter(q => !q.isArea).forEach(q => { const k = q.scale; (g[k] = g[k] || {}); (g[k][q.pref] = g[k][q.pref] || []).push(q.addr); });
+    rows = Object.keys(g).map(Number).sort((a, b) => b - a).map(k => [SCALE[k] || '?', Object.entries(g[k]).map(([pf, a]) => `<b>${pf}</b>${a.slice(0, 12).join('、')}${a.length > 12 ? ` ほか${a.length - 12}地点` : ''}`).join('　')]);
+    $('dsrc').textContent = '気象庁 ・ P2P地震情報';
+  } else {
+    const g = {}; (L.prefs || []).forEach(q => (g[q.maxi] = g[q.maxi] || []).push(q.name));
+    rows = Object.keys(g).sort((a, b) => topClass(b) - topClass(a)).map(k => [k, g[k].map(n => `<b>${n}</b>`).join('　')]);
+    $('dsrc').textContent = '気象庁';
+  }
+  if (isFinite(L.latitude)) {
+    const near = EQ.filter(e => isFinite(e.latitude) && Date.now() - e.t < 30 * 864e5 &&
+      Math.hypot((e.longitude - L.longitude) * 90, (e.latitude - L.latitude) * 111) < 60);
+    const n7 = near.filter(e => Date.now() - e.t < 7 * 864e5).length;
+    $('dnear').innerHTML = `<div class="ctitle">震源付近（60km以内）の地震活動</div><div class="sub" style="margin:0 0 .4vw">30日間 <b>${near.length}回</b> ・ 7日間 <b>${n7}回</b>${near.length >= 10 ? ' ・ 活発な状態が続いています' : ''}</div>` +
+      near.slice(1, 5).map(e => `<div class="eq"><span class="t">${e.time.slice(5)}</span><span class="badge" style="${badgeStyle(e.shindo)}">${shLabel(e.shindo)}</span><span class="pl">${e.location}</span><span class="m">M${e.magnitude}</span></div>`).join('');
+  } else $('dnear').innerHTML = '';
+  $('dpts').innerHTML = rows.length ? rows.map(([sc, txt]) => `<div class="prow"><span class="badge" style="${badgeStyle(sc)}">${shLabel(sc)}</span><div>${txt}</div></div>`).join('')
+    : '<div class="sub">震度の詳しい情報はまだありません</div>';
+}
+function drawStats() {
+  const now = Date.now(), d30 = EQ.filter(e => now - e.t < 30 * 864e5);
+  const big3 = d30.filter(e => topClass(e.shindo) >= 2).length, big4 = d30.filter(e => topClass(e.shindo) >= 3).length;
+  const maxM = d30.reduce((a, e) => (+e.magnitude || 0) > (+(a && a.magnitude) || 0) ? e : a, null);
+  const top = d30.reduce((a, e) => topClass(e.shindo) > topClass(a ? a.shindo : '') ? e : a, null);
+  $('stkv').innerHTML = [['30日間の回数', `${d30.length}<small>回</small>`], ['震度3以上', `${big3}<small>回</small>`], ['震度4以上', `${big4}<small>回</small>`],
+    ['最大震度', top ? `<span class="badge" style="${badgeStyle(top.shindo)};padding:0 .6vw;font-size:1.8vw">${shLabel(top.shindo)}</span>` : '-']]
+    .map(([k, v]) => `<div class="card"><div class="ctitle">${k}</div><div class="snum">${v}</div></div>`).join('');
+  // daily stacked bars
+  const today0 = Math.floor((now + 9 * 3600e3) / 864e5);
+  const days = Array.from({ length: 30 }, (_, i) => ({ day: today0 - 29 + i, c: new Array(CLASSES.length).fill(0) }));
+  d30.forEach(e => { const di = Math.floor((e.t + 9 * 3600e3) / 864e5) - (today0 - 29); if (di >= 0 && di < 30) days[di].c[Math.max(0, topClass(e.shindo))]++; });
+  const mx = Math.max(4, ...days.map(d => d.c.reduce((a, b) => a + b, 0)));
+  const W = 1000, H = 240, bw = W / 30;
+  let svg = '';
+  for (let g = 0; g <= mx; g += Math.ceil(mx / 4)) { const y = H - 30 - (H - 50) * g / mx; svg += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="#e6ebf0"/><text x="2" y="${y - 3}" font-size="16" fill="#8a94a1">${g}</text>`; }
+  days.forEach((d, i) => {
+    let y = H - 30;
+    d.c.forEach((n, k) => { if (!n) return; const h = (H - 50) * n / mx; y -= h; svg += `<rect x="${i * bw + 3}" y="${y}" width="${bw - 6}" height="${h}" fill="${CLASSES[k][2]}" stroke="#3a4552" stroke-opacity=".25"/>`; });
+    const dt = new Date(d.day * 864e5);
+    if (i % 3 === 2 || i === 29) svg += `<text x="${i === 29 ? W - 2 : i * bw + bw / 2}" y="${H - 8}" font-size="17" text-anchor="${i === 29 ? 'end' : 'middle'}" fill="#6b7684">${dt.getUTCMonth() + 1}/${dt.getUTCDate()}</text>`;
+  });
+  $('stsvg').setAttribute('viewBox', `0 0 ${W} ${H}`); $('stsvg').innerHTML = svg;
+  const cnt = {}; d30.forEach(e => { if (e.location !== '震源調査中') cnt[e.location] = (cnt[e.location] || 0) + 1; });
+  const rk = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 6), rmx = rk.length ? rk[0][1] : 1;
+  $('strank').innerHTML = rk.map(([n, c]) => `<div class="rank"><span class="pl" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n}</span><i style="width:${(c / rmx * 100).toFixed(0)}%"></i><span>${c}回</span></div>`).join('');
+  $('stbig').innerHTML = maxM ? `<div style="display:flex;gap:1vw;align-items:center"><span class="badge" style="${badgeStyle(maxM.shindo)};width:4.4vw;height:4.4vw;font-size:2.2vw">${shLabel(maxM.shindo)}</span>` +
+    `<div><div class="big" style="font-size:1.6vw">${maxM.location}</div><div class="sub">${maxM.time.slice(5)} ・ M${maxM.magnitude} ・ 深さ${maxM.depth}</div></div></div>` +
+    `<div class="sub" style="margin-top:1vw">最大震度の地震：${top ? `${top.location}（${top.time.slice(5, 10)}、震度${shLabel(top.shindo)}）` : '-'}</div>` : '-';
 }
 function pollEq() {
-  fetch('https://api.wolfx.jp/jma_eqlist.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
-    if (d.md5 && d.md5 === eqMd5) return drawQuakes();
-    eqMd5 = d.md5 || '';
-    EQ = Object.keys(d).filter(k => /^No\d+$/.test(k)).sort((a, b) => a.slice(2) - b.slice(2)).map(k => d[k])
-      .map(e => ({ ...e, t: jst(e.time_full || e.time + ':00') })).filter(e => e.t);
+  fetch('https://www.jma.go.jp/bosai/quake/data/list.json?t=' + Math.floor(Date.now() / 30000), { cache: 'no-store' }).then(r => r.json()).then(list => {
+    const sig = list.length + '|' + (list[0] && list[0].ctt);
+    if (sig !== eqMd5) { eqMd5 = sig; EQ = fromJMA(list); }
     drawQuakes();
+  }).catch(() => fetch('https://api.wolfx.jp/jma_eqlist.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(d => {
+    EQ = Object.keys(d).filter(k => /^No\d+$/.test(k)).sort((a, b) => a.slice(2) - b.slice(2)).map(k => d[k])
+      .map(e => ({ ...e, t: jst(e.time_full || e.time + ':00'), latitude: +e.latitude, longitude: +e.longitude, prefs: [] })).filter(e => e.t);
+    drawQuakes();
+  }).catch(() => {}));
+  // detailed points + tsunami (P2P地震情報)
+  fetch('https://api.p2pquake.net/v2/history?codes=551&limit=1').then(r => r.json()).then(a => { P2P = a[0] || null; drawDetail(); drawQuakes(); }).catch(() => {});
+  fetch('https://api.p2pquake.net/v2/history?codes=552&limit=1').then(r => r.json()).then(a => {
+    const t = a[0]; TSU = null;
+    if (t && !t.cancelled && Date.now() - Date.parse(t.time.replace(/\//g, '-').replace(' ', 'T') + '+09:00') < 24 * 3600e3) {
+      const kinds = { MajorWarning: '大津波警報', Warning: '津波警報', Watch: '津波注意報' };
+      const ks = [...new Set((t.areas || []).map(x => kinds[x.grade]).filter(Boolean))];
+      if (ks.length) TSU = ks.join('・') + '（' + (t.areas || []).slice(0, 6).map(x => x.name).join('、') + (t.areas.length > 6 ? ' ほか' : '') + '）';
+    }
+    banner();
   }).catch(() => {});
 }
 
@@ -359,11 +551,93 @@ function pollWx() {
   }).catch(() => {});
 }
 pollWx(); setInterval(pollWx, 15 * 60 * 1000);
-// rotation: quake map 30 s, weather 15 s
-(function rotate(showWx) {
-  $('sright').classList.toggle('showwx', showWx);
-  setTimeout(() => rotate(!showWx), showWx ? 15000 : 30000);
-})(false);
+// JMA 天気概況 (official text)
+const JMA_OFFICE = QS.get('office') || '130000', JMA_CITY = QS.get('city') || '1310400';
+function pollJmaText() {
+  fetch(`https://www.jma.go.jp/bosai/forecast/data/overview_forecast/${JMA_OFFICE}.json`).then(r => r.json()).then(o => {
+    const t = (o.text || '').replace(/\s+/g, ' ').replace(/^　/, '').trim();
+    $('wxov').innerHTML = `<b style="color:#3b5b7d">気象庁 天気概況</b>　${t.slice(0, 190)}${t.length > 190 ? '…' : ''}`;
+  }).catch(() => {});
+}
+pollJmaText(); setInterval(pollJmaText, 30 * 60 * 1000);
+function pollJmaFc() {
+  fetch(`https://www.jma.go.jp/bosai/forecast/data/forecast/${JMA_OFFICE}.json`).then(r => r.json()).then(f => {
+    const ts = f[0].timeSeries, W0 = ts[0].areas[0], P = ts[1];
+    $('fcarea').textContent = W0.area.name;
+    const pops = {}; P.timeDefines.forEach((t, i) => { const d = t.slice(0, 10); (pops[d] = pops[d] || []).push(P.areas[0].pops[i]); });
+    $('lffc').innerHTML = ts[0].timeDefines.map((t, i) => {
+      const d = t.slice(0, 10), lbl = ['今日', '明日', 'あさって'][i] || d.slice(5);
+      return `<div class="fcrow"><b>${lbl}</b><span>${W0.weathers[i].replace(/　/g, ' ')}</span><span>${pops[d] ? pops[d].map(x => x + '%').join(' ') : ''}</span></div>`;
+    }).join('');
+  }).catch(() => {});
+}
+pollJmaFc(); setInterval(pollJmaFc, 30 * 60 * 1000);
+// warnings (気象警報・注意報) for the city
+const WARN = { '02': '暴風雪警報', '03': '大雨警報', '04': '洪水警報', '05': '暴風警報', '06': '大雪警報', '07': '波浪警報', '08': '高潮警報',
+  '10': '大雨注意報', '12': '大雪注意報', '13': '風雪注意報', '14': '雷注意報', '15': '強風注意報', '16': '波浪注意報', '17': '融雪注意報', '18': '洪水注意報',
+  '19': '高潮注意報', '20': '濃霧注意報', '21': '乾燥注意報', '22': 'なだれ注意報', '23': '低温注意報', '24': '霜注意報', '25': '着氷注意報', '26': '着雪注意報',
+  '32': '暴風雪特別警報', '33': '大雨特別警報', '35': '暴風特別警報', '36': '大雪特別警報', '37': '波浪特別警報', '38': '高潮特別警報' };
+let WARNS = [];
+function pollWarn() {
+  fetch(`https://www.jma.go.jp/bosai/warning/data/warning/${JMA_OFFICE}.json`).then(r => r.json()).then(w => {
+    let area = null; (w.areaTypes || []).forEach(at => at.areas.forEach(x => { if (x.code === JMA_CITY) area = x; }));
+    WARNS = area ? area.warnings.filter(x => x.code && !/解除|発表警報・注意報はなし/.test(x.status || '')).map(x => WARN[x.code] || ('情報' + x.code)) : [];
+    $('lfwarn').innerHTML = WARNS.length ? WARNS.map(n => `<span class="chip ${/特別/.test(n) ? 'spc' : /警報/.test(n) ? 'wrn' : 'adv'}">${n}</span>`).join('')
+      : '<span class="chip none">発表なし</span>';
+    $('lfhead').textContent = (w.headlineText || '').slice(0, 120);
+    banner();
+  }).catch(() => {});
+}
+pollWarn(); setInterval(pollWarn, 10 * 60 * 1000);
+function banner() {
+  const w = WARNS.filter(n => /警報/.test(n));
+  const msg = [TSU ? '🌊 ' + TSU : '', w.length ? '⚠ ' + WX.place + 'に' + w.join('・') : ''].filter(Boolean).join('　');
+  $('lban').style.display = msg ? 'block' : 'none'; $('lban').textContent = msg;
+}
+// air, sun, UV, moon, calendar
+const AQI = v => v <= 50 ? ['良好', '#2e7d32'] : v <= 100 ? ['普通', '#9e9d24'] : v <= 150 ? ['敏感な人は注意', '#ef6c00'] : v <= 200 ? ['悪い', '#c62828'] : ['非常に悪い', '#6a1b9a'];
+let HOL = {};
+function pollLife() {
+  fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${WX.lat}&longitude=${WX.lon}&current=pm2_5,pm10,us_aqi,uv_index&timezone=Asia%2FTokyo`).then(r => r.json()).then(d => {
+    const c = d.current, q = AQI(c.us_aqi);
+    $('lfaqi').innerHTML = `<span style="color:${q[1]}">${q[0]}</span>`;
+    $('lfaqis').textContent = `PM2.5 ${Math.round(c.pm2_5)}μg/m³ ・ PM10 ${Math.round(c.pm10)} ・ AQI ${c.us_aqi}`;
+  }).catch(() => {});
+  fetch(`https://api.open-meteo.com/v1/forecast?latitude=${WX.lat}&longitude=${WX.lon}&daily=sunrise,sunset,uv_index_max,daylight_duration&timezone=Asia%2FTokyo&forecast_days=2`).then(r => r.json()).then(d => {
+    const D = d.daily;
+    $('lfsun').style.fontSize = '2.2vw'; $('lfsun').innerHTML = `<span style="font-size:1.1vw;color:#6b7684">日の出 </span><span style="color:#ef6c00">${D.sunrise[0].slice(11)}</span><br><span style="font-size:1.1vw;color:#6b7684">日の入 </span><span style="color:#3949ab">${D.sunset[0].slice(11)}</span>`;
+    const dl = D.daylight_duration[0] / 60, dd = (D.daylight_duration[1] - D.daylight_duration[0]) / 60;
+    $('lfsuns').textContent = `昼の長さ ${Math.floor(dl / 60)}時間${Math.round(dl % 60)}分（明日は${dd >= 0 ? '+' : '−'}${Math.abs(dd).toFixed(1)}分）`;
+    const uv = D.uv_index_max[0], ul = uv < 3 ? '弱い' : uv < 6 ? '中程度' : uv < 8 ? '強い' : uv < 11 ? '非常に強い' : '極端に強い';
+    $('lfuv').innerHTML = `UV ${uv.toFixed(1)} <span style="font-size:1.3vw;color:#6b7684">${ul}</span>`;
+  }).catch(() => {});
+  fetch('https://holidays-jp.github.io/api/v1/date.json').then(r => r.json()).then(h => { HOL = h; drawCal(); }).catch(() => {});
+  drawCal();
+}
+function drawCal() {
+  const n = new Date(Date.now() + netOffset + 9 * 3600e3), ymd = n.toISOString().slice(0, 10);
+  const age = ((Date.now() / 864e5 - (Date.UTC(2000, 0, 6, 18, 14) / 864e5)) % 29.530589 + 29.530589) % 29.530589;
+  const ph = age < 1.8 ? '新月' : age < 5.5 ? '三日月' : age < 9.2 ? '上弦の月' : age < 12.9 ? '十三夜' : age < 16.6 ? '満月' : age < 20.3 ? '寝待月' : age < 24 ? '下弦の月' : age < 27.7 ? '有明月' : '新月';
+  $('lfmoon').textContent = `月齢 ${age.toFixed(1)}（${ph}）`;
+  const next = Object.keys(HOL).filter(d => d >= ymd).sort()[0];
+  if (HOL[ymd]) $('lfhol').textContent = `今日は${HOL[ymd]}`;
+  else if (next) { const dd = Math.round((Date.parse(next) - Date.parse(ymd)) / 864e5); $('lfhol').innerHTML = `次の祝日まで<span style="color:#d81b60"> ${dd}日</span>`; }
+  const y0 = Date.UTC(n.getUTCFullYear(), 0, 1), y1 = Date.UTC(n.getUTCFullYear() + 1, 0, 1), left = Math.ceil((y1 - Date.parse(ymd)) / 864e5) - 1;
+  $('lfcal').innerHTML = (next && !HOL[ymd] ? `${+next.slice(5, 7)}月${+next.slice(8)}日 ${HOL[next]}<br>` : '') + `${n.getUTCFullYear()}年も残り${left}日（${Math.round((Date.parse(ymd) - y0) / (y1 - y0) * 100)}%経過）`;
+}
+pollLife(); setInterval(pollLife, 30 * 60 * 1000);
+// page rotation
+const PAGES = [['pg-map', '震源マップ', 25], ['pg-detail', '最新の地震', 15], ['pg-stats', '統計', 15], ['pg-wx', '天気', 20], ['pg-life', '暮らし', 15]];
+const PG = +(QS.get('page') || -1);
+let pageIdx = -1;
+function nextPage() {
+  pageIdx = PG >= 0 ? PG : (pageIdx + 1) % PAGES.length;
+  const [id, , sec] = PAGES[pageIdx];
+  PAGES.forEach(([pid]) => $(pid).classList.toggle('active', pid === id));
+  $('pager').innerHTML = PAGES.map(([pid, nm, s2], i) => `<span class="${i === pageIdx ? 'on' : ''}">${nm}${i === pageIdx ? `<i style="animation-duration:${s2}s"></i>` : ''}</span>`).join('');
+  if (PG < 0) setTimeout(nextPage, sec * 1000);
+}
+nextPage();
 
 // ---------- alert sounds (original; FM bells + reverb, Web Audio) ----------
 const Sound = (() => {
