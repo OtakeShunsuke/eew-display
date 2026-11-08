@@ -411,6 +411,18 @@ function runDemo(name) {
   }, 6000 + (t - d.reports[0][0]) * 1000));
 }
 const demo = new URLSearchParams(location.search).get('demo'); if (demo) runDemo(demo);
+
+// ---------- remote drill: an open page picks up test.json (no reload, so no CEC wake-up) ----------
+// test.json = {"id": "...", "demo": "drill" | "replay", "at": <epoch seconds>}; runs once per id, only if fresh
+let testSeen = null;
+function pollTest() {
+  fetch('test.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(t => {
+    if (!t || !t.id) return;
+    if (testSeen === null) { testSeen = t.id; return; }            // ignore whatever was there at load time
+    if (t.id !== testSeen && Math.abs(Date.now() / 1000 - (t.at || 0)) < 600) { testSeen = t.id; runDemo(t.demo || 'drill'); }
+  }).catch(() => {});
+}
+pollTest(); setInterval(pollTest, 15000);
 </script>
 </body>
 </html>
